@@ -5,8 +5,10 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.annotation.SuppressLint;
 import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationListener;
@@ -21,6 +23,15 @@ public class MainActivity extends AppCompatActivity {
 
     LocationManager locationManager;
 
+    BroadcastReceiver brLocation = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            Location location =
+            intent.getParcelableExtra(LocationManager.KEY_LOCATION_CHANGED);
+            mt("new location: " + location.getLatitude()  + " , " + location.getLongitude());
+        }
+    };
+
     @SuppressLint("MissingPermission")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -30,7 +41,7 @@ public class MainActivity extends AppCompatActivity {
         locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 
         List<String> providerNames = locationManager.getAllProviders();
-        for(String proName : providerNames) {
+        for (String proName : providerNames) {
             mt(proName);
 
             LocationProvider locationProvider = locationManager.getProvider(proName);
@@ -44,8 +55,8 @@ public class MainActivity extends AppCompatActivity {
 
             @SuppressLint("MissingPermission")
             Location location = locationManager.getLastKnownLocation(proName);
-            if(location != null) {
-                mt("location: " + location.getLatitude() + " , " + location.getLongitude() + " , " + location.getAltitude() + " --> " + location.getAccuracy() );
+            if (location != null) {
+                mt("location: " + location.getLatitude() + " , " + location.getLongitude() + " , " + location.getAltitude() + " --> " + location.getAccuracy());
 
             }
             mt("----------------------------------");
@@ -64,6 +75,7 @@ public class MainActivity extends AppCompatActivity {
 
         //locationManager.get
 
+        /*
         LocationListener listener = new MyLocationListener();
         locationManager.requestLocationUpdates(
                 bestProvider,
@@ -71,6 +83,57 @@ public class MainActivity extends AppCompatActivity {
                 10,
                 listener
         );
+        */
+
+        registerReceiver(
+                brLocation,
+                new IntentFilter("in.bitcode.KR")
+        );
+
+        locationManager.requestLocationUpdates(
+                LocationManager.NETWORK_PROVIDER,
+                1000,
+                10,
+                PendingIntent.getBroadcast(
+                        this,
+                        1,
+                        new Intent("in.bitcode.KR"),
+                        0
+                )
+        );
+
+
+        registerReceiver(
+                new BroadcastReceiver() {
+                    @Override
+                    public void onReceive(Context context, Intent intent) {
+                        Location location =
+                                intent.getParcelableExtra(LocationManager.KEY_LOCATION_CHANGED);
+                        mt("single new location: " + location.getLatitude()  + " , " + location.getLongitude());
+                    }
+                },
+                new IntentFilter("in.bitcode.single.KR")
+        );
+
+
+        locationManager.requestSingleUpdate(
+                LocationManager.NETWORK_PROVIDER,
+                PendingIntent.getBroadcast(
+                        this,
+                        1,
+                        new Intent("in.bitcode.single.KR"),
+                        0
+                )
+        );
+
+        /*locationManager.removeUpdates(
+                PendingIntent.getBroadcast(
+                        this,
+                        1,
+                        new Intent("in.bitcode.KR"),
+                        0
+                )
+        );*/
 
 
         PendingIntent pendingIntent = PendingIntent.getBroadcast(
@@ -97,7 +160,7 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public void onLocationChanged(@NonNull Location location) {
-            mt(location.getLatitude()  + " -- " + location.getLongitude());
+            mt(location.getLatitude() + " -- " + location.getLongitude());
         }
 
         @Override
